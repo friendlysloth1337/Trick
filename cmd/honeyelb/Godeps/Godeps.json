@@ -1,10 +1,7 @@
 {
-	"ImportPath": "github.com/honeycombio/honeyelb",
+	"ImportPath": "github.com/honeycombio/honeyelb/cmd/honeyelb",
 	"GoVersion": "go1.9",
 	"GodepVersion": "v79",
-	"Packages": [
-		"./..."
-	],
 	"Deps": [
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
@@ -127,11 +124,6 @@
 			"Rev": "a42816b7219102ae19ac57b8737af5fbe1f90afb"
 		},
 		{
-			"ImportPath": "github.com/aws/aws-sdk-go/service/cloudfront",
-			"Comment": "v1.10.15-3-ga42816b7",
-			"Rev": "a42816b7219102ae19ac57b8737af5fbe1f90afb"
-		},
-		{
 			"ImportPath": "github.com/aws/aws-sdk-go/service/elb",
 			"Comment": "v1.10.15-3-ga42816b7",
 			"Rev": "a42816b7219102ae19ac57b8737af5fbe1f90afb"
@@ -181,6 +173,26 @@
 			"ImportPath": "github.com/honeycombio/gonx",
 			"Comment": "v1.3.0-6-gdc1c4fe",
 			"Rev": "dc1c4fe6e0cc63c38a537b78f9ddaa60e168b957"
+		},
+		{
+			"ImportPath": "github.com/honeycombio/honeyelb/logbucket",
+			"Rev": "78c15f63ed436ad1a306cacdbdb3eae928b964fb"
+		},
+		{
+			"ImportPath": "github.com/honeycombio/honeyelb/meta",
+			"Rev": "78c15f63ed436ad1a306cacdbdb3eae928b964fb"
+		},
+		{
+			"ImportPath": "github.com/honeycombio/honeyelb/options",
+			"Rev": "78c15f63ed436ad1a306cacdbdb3eae928b964fb"
+		},
+		{
+			"ImportPath": "github.com/honeycombio/honeyelb/publisher",
+			"Rev": "78c15f63ed436ad1a306cacdbdb3eae928b964fb"
+		},
+		{
+			"ImportPath": "github.com/honeycombio/honeyelb/state",
+			"Rev": "78c15f63ed436ad1a306cacdbdb3eae928b964fb"
 		},
 		{
 			"ImportPath": "github.com/honeycombio/honeytail/event",

@@ -17,12 +17,12 @@ import (
 	"github.com/honeycombio/honeytail/parsers/nginx"
 )
 
-type CloudfrontEventParser struct {
+type CloudFrontEventParser struct {
 	sampler dynsampler.Sampler
 }
 
-func NewCloudfrontEventParser(sampleRate int) *CloudfrontEventParser {
-	ep := &CloudfrontEventParser{
+func NewCloudFrontEventParser(sampleRate int) *CloudFrontEventParser {
+	ep := &CloudFrontEventParser{
 		sampler: &dynsampler.AvgSampleRate{
 			ClearFrequencySec: 300,
 			GoalSampleRate:    sampleRate,
@@ -36,7 +36,7 @@ func NewCloudfrontEventParser(sampleRate int) *CloudfrontEventParser {
 	return ep
 }
 
-func (ep *CloudfrontEventParser) ParseEvents(obj state.DownloadedObject, out chan<- event.Event) error {
+func (ep *CloudFrontEventParser) ParseEvents(obj state.DownloadedObject, out chan<- event.Event) error {
 	np := &nginx.Parser{}
 	err := np.Init(&nginx.Options{
 		ConfigFile:      formatFileName,
@@ -68,8 +68,10 @@ func (ep *CloudfrontEventParser) ParseEvents(obj state.DownloadedObject, out cha
 
 	scanner := bufio.NewScanner(r)
 	nLines := 0
+	timer := time.NewTimer(time.Second)
 
 	for scanner.Scan() {
+		nLines++
 		line := scanner.Text()
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
@@ -90,22 +92,21 @@ func (ep *CloudfrontEventParser) ParseEvents(obj state.DownloadedObject, out cha
 		// nginx parser is fickle about whitespace, so the join ensures
 		// that only one space exists between fields
 		linesCh <- strings.Join(splitLine, " ")
-		nLines++
-	}
 
-	for i := 0; i < nLines; i++ {
 		select {
-		case <-time.NewTimer(time.Second).C:
-			return fmt.Errorf("nginx parser didn't successfully parse every line sent (%s/%s parsed), deadline exceeded", i, nLines)
+		case <-timer.C:
+			return fmt.Errorf("nginx parser didn't successfully parse every line presented to it. # done so far: %d", nLines)
 		case ev := <-eventsCh:
+			logrus.Debug("sent on eventsCh")
 			out <- ev
 		}
+		timer.Reset(time.Second)
 	}
 
 	return nil
 }
 
-func (ep *CloudfrontEventParser) DynSample(in <-chan event.Event, out chan<- event.Event) {
+func (ep *CloudFrontEventParser) DynSample(in <-chan event.Event, out chan<- event.Event) {
 	for ev := range in {
 		var key string
 		if backendStatusCode, ok := ev.Data["sc-status"]; ok {
@@ -131,7 +132,7 @@ func (ep *CloudfrontEventParser) DynSample(in <-chan event.Event, out chan<- eve
 		}
 		if rand.Intn(rate) == 0 {
 			ev.SampleRate = rate
+			out <- ev
 		}
-		out <- ev
 	}
 }

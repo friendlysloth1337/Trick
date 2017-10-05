@@ -214,7 +214,7 @@ func (d *Downloader) pollObjects() {
 			fmt.Fprintln(os.Stderr, "Error listing/paging bucket objects: ", err)
 			os.Exit(1)
 		}
-		logrus.Info("Pausing until the next set of logs are available")
+		logrus.Info("Bucket polling paused until the next set of logs are available")
 		<-ticker
 	}
 }

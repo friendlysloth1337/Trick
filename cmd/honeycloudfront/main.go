@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
 
 	"github.com/Sirupsen/logrus"
@@ -78,7 +79,7 @@ Your write key is available at https://ui.honeycomb.io/account`)
 
 			stater := state.NewFileStater(opt.StateDir, logbucket.AWSCloudFront)
 			downloadsCh := make(chan state.DownloadedObject)
-			defaultPublisher := publisher.NewHoneycombPublisher(opt, stater, publisher.NewCloudFrontParser(opt.SampleRate))
+			defaultPublisher := publisher.NewHoneycombPublisher(opt, stater, publisher.NewCloudFrontEventParser(opt.SampleRate))
 
 			// For now, just run one goroutine per-distribution
 			for _, id := range distIds {
@@ -128,24 +129,26 @@ http://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer
 			}
 
 			signalCh := make(chan os.Signal)
+			signal.Notify(signalCh, os.Interrupt)
 
-			// block forever (until interrupt)
-			select {
-			case <-signalCh:
-				logrus.Info("Exiting due to interrupt.")
-				// TODO(nathanleclaire): Cleanup before
-				// exiting.
-				//
-				// 1. Delete format file, even
-				//    though it's in /tmp.
-				// 2. Also, wait for existing in-flight object
-				//    parsing / sending to finish so that state of
-				//    parsing "cursor" can be written to the JSON
-				//    file.
-				os.Exit(0)
-			case download := <-downloadsCh:
-				if err := defaultPublisher.Publish(download); err != nil {
-					logrus.WithField("object", download).Error("Cannot properly publish downloaded object")
+			for {
+				select {
+				case <-signalCh:
+					logrus.Info("Exiting due to interrupt.")
+					// TODO(nathanleclaire): Cleanup before
+					// exiting.
+					//
+					// 1. Delete format file, even
+					//    though it's in /tmp.
+					// 2. Also, wait for existing in-flight object
+					//    parsing / sending to finish so that state of
+					//    parsing "cursor" can be written to the JSON
+					//    file.
+					os.Exit(0)
+				case download := <-downloadsCh:
+					if err := defaultPublisher.Publish(download); err != nil {
+						logrus.WithField("object", download).Error("Cannot properly publish downloaded object")
+					}
 				}
 			}
 		}

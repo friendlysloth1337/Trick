@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/signal"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/aws/aws-sdk-go/aws"
@@ -125,6 +126,7 @@ http://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer
 			}
 
 			signalCh := make(chan os.Signal)
+			signal.Notify(signalCh, os.Interrupt)
 
 			// block forever (until interrupt)
 			for {

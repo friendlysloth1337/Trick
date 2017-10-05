@@ -1,0 +1,24 @@
+import "testing"
+
+func TestTotalPrefix(t *testing.T) {
+	testCases := []struct {
+		desc, bucketPrefix, accountID, region, timePath, expected string
+	}{
+		{
+			desc:         "User specified prefix exists",
+			bucketPrefix: "prefix",
+			accountID:    "123456",
+			region:       "us-east-1",
+			timePath:     "/2017/10/03",
+			expected:     "prefix/AWSLogs/123456/elasticloadbalancing/",
+		},
+		{
+			desc:         "User specified prefix does not exist",
+			bucketPrefix: "",
+			accountID:    "123456",
+			region:       "us-east-1",
+			timePath:     "/2017/10/03",
+			expected:     "AWSLogs/",
+		},
+	}
+}

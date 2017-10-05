@@ -62,26 +62,25 @@ func (ep *ELBEventParser) ParseEvents(obj state.DownloadedObject, out chan<- eve
 
 	scanner := bufio.NewScanner(f)
 	nLines := 0
+	timer := time.NewTimer(time.Second)
 
 	for scanner.Scan() {
+		nLines++
 		line := scanner.Text()
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
 		linesCh <- line
-		nLines++
-	}
-
-	for i := 0; i < nLines; i++ {
 		select {
-		case <-time.NewTimer(time.Second).C:
-			return fmt.Errorf("nginx parser didn't successfully parse every line sent (%s/%s parsed), deadline exceeded", i, nLines)
+		case <-timer.C:
+			return fmt.Errorf("nginx parser didn't successfully parse every line presented to it. # done so far: %d", nLines)
 		case ev := <-eventsCh:
 			out <- ev
 		}
+		timer.Reset(time.Second)
 	}
 
-	return nil
+	return scanner.Err()
 
 }
 
@@ -116,7 +115,7 @@ func (ep *ELBEventParser) DynSample(in <-chan event.Event, out chan<- event.Even
 		}
 		if rand.Intn(rate) == 0 {
 			ev.SampleRate = rate
+			out <- ev
 		}
-		out <- ev
 	}
 }

@@ -77,7 +77,7 @@ Your write key is available at https://ui.honeycomb.io/account`)
 
 			// Use this one publisher instance for all ObjectDownloadParsers.
 			stater := state.NewFileStater(opt.StateDir, logbucket.AWSElasticLoadBalancing)
-			defaultPublisher := publisher.NewHoneycombPublisher(opt, stater, publisher.AWSElasticLoadBalancerFormat)
+			defaultPublisher := publisher.NewHoneycombPublisher(opt, stater, publisher.NewELBEventParser(opt.SampleRate))
 			downloadsCh := make(chan state.DownloadedObject)
 
 			// For now, just run one goroutine per-LB

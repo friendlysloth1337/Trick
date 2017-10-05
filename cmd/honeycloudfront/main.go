@@ -78,7 +78,7 @@ Your write key is available at https://ui.honeycomb.io/account`)
 
 			stater := state.NewFileStater(opt.StateDir, logbucket.AWSCloudFront)
 			downloadsCh := make(chan state.DownloadedObject)
-			defaultPublisher := publisher.NewHoneycombPublisher(opt, stater, publisher.AWSCloudFrontWebFormat)
+			defaultPublisher := publisher.NewHoneycombPublisher(opt, stater, publisher.NewCloudFrontParser(opt.SampleRate))
 
 			// For now, just run one goroutine per-distribution
 			for _, id := range distIds {

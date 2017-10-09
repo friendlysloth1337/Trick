@@ -70,8 +70,8 @@ type EventParser interface {
 // events to Honeycomb (if desired), as well as isolate line parsing, sampling,
 // and URL sub-parsing logic.
 type HoneycombPublisher struct {
-	state.Stater
-	EventParser
+	Stater              state.Stater
+	EventParser         EventParser
 	APIHost             string
 	SampleRate          int
 	FinishedObjects     chan string
@@ -129,16 +129,17 @@ func sendEventsToHoneycomb(in <-chan event.Event) {
 }
 
 func (hp *HoneycombPublisher) Publish(downloadedObj state.DownloadedObject) error {
-	if err := hp.ParseEvents(downloadedObj, hp.parsedCh); err != nil {
+	if err := hp.EventParser.ParseEvents(downloadedObj, hp.parsedCh); err != nil {
 		return err
 	}
 
 	// Clean up the downloaded object.
+	// TODO: Should always be done?
 	if err := os.Remove(downloadedObj.Filename); err != nil {
 		return fmt.Errorf("Error cleaning up downloaded object %s: %s", downloadedObj.Filename, err)
 	}
 
-	if err := hp.SetProcessed(downloadedObj.Object); err != nil {
+	if err := hp.Stater.SetProcessed(downloadedObj.Object); err != nil {
 		return fmt.Errorf("Error setting state of object as processed: %s", err)
 	}
 

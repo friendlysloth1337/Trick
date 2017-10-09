@@ -122,6 +122,8 @@ http://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer
 				// instead using channels:
 				//
 				// (Query Objects to Process) => (Download Objects) => (Parse Objects) => (Send to HC)
+				//
+				// TODO: There is a bug where this should be slice (or whatever)
 				downloadsCh = downloader.Download()
 			}
 

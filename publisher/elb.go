@@ -71,6 +71,8 @@ func (ep *ELBEventParser) ParseEvents(obj state.DownloadedObject, out chan<- eve
 			continue
 		}
 		linesCh <- line
+
+		// todo: close lines chan instead of this method
 		select {
 		case <-timer.C:
 			return fmt.Errorf("nginx parser didn't successfully parse every line presented to it. # done so far: %d", nLines)

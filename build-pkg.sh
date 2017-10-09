@@ -32,6 +32,6 @@ fpm -s dir -n honeycomb-aws \
     $GOPATH/bin/honeyelb=/usr/bin/honeyelb \
     $GOPATH/bin/honeycloudfront=/usr/bin/honeycloudfront \
     ./honeycloudfront.upstart=/etc/init/honeycloudfront.conf \
-    ./honeycloudfront.service=/lib/systemd/system/honeycloudfront.service
+    ./honeycloudfront.service=/lib/systemd/system/honeycloudfront.service \
     ./honeyelb.upstart=/etc/init/honeyelb.conf \
     ./honeyelb.service=/lib/systemd/system/honeyelb.service

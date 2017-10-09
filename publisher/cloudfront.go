@@ -8,7 +8,6 @@ import (
 	"os"
 	"runtime"
 	"strings"
-	"time"
 
 	"github.com/Sirupsen/logrus"
 	dynsampler "github.com/honeycombio/dynsampler-go"
@@ -50,9 +49,8 @@ func (ep *CloudFrontEventParser) ParseEvents(obj state.DownloadedObject, out cha
 	}
 
 	linesCh := make(chan string)
-	eventsCh := make(chan event.Event)
 
-	go np.ProcessLines(linesCh, eventsCh, nil)
+	go np.ProcessLines(linesCh, out, nil)
 
 	f, err := os.Open(obj.Filename)
 	if err != nil {
@@ -67,11 +65,8 @@ func (ep *CloudFrontEventParser) ParseEvents(obj state.DownloadedObject, out cha
 	}
 
 	scanner := bufio.NewScanner(r)
-	nLines := 0
-	timer := time.NewTimer(time.Second)
 
 	for scanner.Scan() {
-		nLines++
 		line := scanner.Text()
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
@@ -92,15 +87,6 @@ func (ep *CloudFrontEventParser) ParseEvents(obj state.DownloadedObject, out cha
 		// nginx parser is fickle about whitespace, so the join ensures
 		// that only one space exists between fields
 		linesCh <- strings.Join(splitLine, " ")
-
-		select {
-		case <-timer.C:
-			return fmt.Errorf("nginx parser didn't successfully parse every line presented to it. # done so far: %d", nLines)
-		case ev := <-eventsCh:
-			logrus.Debug("sent on eventsCh")
-			out <- ev
-		}
-		timer.Reset(time.Second)
 	}
 
 	return nil
@@ -110,10 +96,14 @@ func (ep *CloudFrontEventParser) DynSample(in <-chan event.Event, out chan<- eve
 	for ev := range in {
 		var key string
 		if backendStatusCode, ok := ev.Data["sc-status"]; ok {
-			if bsc, ok := backendStatusCode.(int); ok {
+			if bsc, ok := backendStatusCode.(int64); ok {
 				key = fmt.Sprintf("%d", bsc)
 			} else {
 				key = "0"
+				logrus.WithFields(logrus.Fields{
+					"field":    "sc-status",
+					"intended": "int64",
+				}).Error("Did not cast field from access log correctly")
 			}
 		}
 

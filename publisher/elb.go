@@ -7,7 +7,6 @@ import (
 	"os"
 	"runtime"
 	"strings"
-	"time"
 
 	"github.com/Sirupsen/logrus"
 	dynsampler "github.com/honeycombio/dynsampler-go"
@@ -49,9 +48,8 @@ func (ep *ELBEventParser) ParseEvents(obj state.DownloadedObject, out chan<- eve
 	}
 
 	linesCh := make(chan string)
-	eventsCh := make(chan event.Event)
 
-	go np.ProcessLines(linesCh, eventsCh, nil)
+	go np.ProcessLines(linesCh, out, nil)
 
 	f, err := os.Open(obj.Filename)
 	if err != nil {
@@ -61,25 +59,13 @@ func (ep *ELBEventParser) ParseEvents(obj state.DownloadedObject, out chan<- eve
 	defer f.Close()
 
 	scanner := bufio.NewScanner(f)
-	nLines := 0
-	timer := time.NewTimer(time.Second)
 
 	for scanner.Scan() {
-		nLines++
 		line := scanner.Text()
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
 		linesCh <- line
-
-		// todo: close lines chan instead of this method
-		select {
-		case <-timer.C:
-			return fmt.Errorf("nginx parser didn't successfully parse every line presented to it. # done so far: %d", nLines)
-		case ev := <-eventsCh:
-			out <- ev
-		}
-		timer.Reset(time.Second)
 	}
 
 	return scanner.Err()
@@ -91,15 +77,23 @@ func (ep *ELBEventParser) DynSample(in <-chan event.Event, out chan<- event.Even
 		// use backend_status_code and elb_status_code to set sample rate
 		var key string
 		if backendStatusCode, ok := ev.Data["backend_status_code"]; ok {
-			if bsc, ok := backendStatusCode.(int); ok {
+			if bsc, ok := backendStatusCode.(int64); ok {
 				key = fmt.Sprintf("%d", bsc)
 			} else {
 				key = "0"
+				logrus.WithFields(logrus.Fields{
+					"field":    "backend_status_code",
+					"intended": "int64",
+				}).Error("Did not cast field from access log correctly")
 			}
 		}
 		if elbStatusCode, ok := ev.Data["elb_status_code"]; ok {
-			if esc, ok := elbStatusCode.(int); ok {
+			if esc, ok := elbStatusCode.(int64); ok {
 				key = fmt.Sprintf("%s_%d", key, esc)
+				logrus.WithFields(logrus.Fields{
+					"field":    "elb_status_code",
+					"intended": "int64",
+				}).Error("Did not cast field from access log correctly")
 			}
 		}
 
